@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="SimJava">
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$/../../SimJava" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://$PROJECT_DIR$/../../SimJava/src" />
+    </SOURCES>
+  </library>
+</component>
