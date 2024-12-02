@@ -17,7 +17,8 @@ public class Device {
         this.status = DeviceStatus.CONNECTED;
     }
     public void disconnect() {
-        this.status = DeviceStatus.DISCONNECTED;
+        if (!this.isAlwaysConnected)
+            this.status = DeviceStatus.DISCONNECTED;
     }
     public void onhold() {
         this.status = DeviceStatus.ONHOLD;

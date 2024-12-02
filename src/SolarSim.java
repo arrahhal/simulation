@@ -39,8 +39,11 @@ public class SolarSim {
         for (int idx = numOfDevices + 2; idx < params.length; idx++) {
             if (params[idx].equals( "1")) {
                 Device d = devices.get(idx - (numOfDevices + 2));
+                d.isAlwaysConnected = true;
                 if (d.wattUsage + currentWatt() <= solarInput) {
                     d.connect();
+                } else {
+                    d.onhold();
                 }
             }
         }
