@@ -11,14 +11,18 @@ public class SolarSim {
     int solarInput;
     List<Device> devices = new ArrayList<Device>();
 
+    // store on hold devices indexes from oldest to newest
+    List<Device> onHoldDevices = new ArrayList<Device>();
+
     int totalWattUsed = 0;
     int wattWasted = 0;
     int wattNeeded = 0;
     double simTime = 0.0;
 
+    int numOfDevices = 0;
+
     public void input() throws IOException {
         BufferedReader inFile = new BufferedReader(new FileReader("data/solar.in"));
-        int numberOfDevices = 0;
 
         String[] params = inFile.readLine().trim().split("\\s+");
         for (int idx = 0; idx++ < params.length; idx++) {
@@ -27,12 +31,12 @@ public class SolarSim {
                 solarInput = param;
             }
             else if (idx == 1) {
-                numberOfDevices = param;
-            } else if (idx <= 1 + numberOfDevices) {
+                numOfDevices = param;
+            } else if (idx <= 1 + numOfDevices) {
                 Device device = new Device();
                 devices.add(device);
             } else {
-                int index = idx - numberOfDevices + 2;
+                int index = idx - numOfDevices + 2;
                 if (param == 1) {
                     devices.get(index).connect();
                 }
@@ -84,47 +88,53 @@ public class SolarSim {
     }
 
     private boolean connectingOnHoldEvent() {
-        for (Device device : devices.stream()
-                .filter(d -> d.status == DeviceStatus.ONHOLD)
-                .toList()) {
-                if (totalWattUsed + device.wattUsage <= solarInput) {
-                    device.connect();
-                    totalWattUsed += device.wattUsage;
+        for (Device d : onHoldDevices) {
+            if (d.status == DeviceStatus.ONHOLD) {
+                if (d.wattUsage + totalWattUsed <= solarInput) {
+                    onHoldDevices.remove(d);
+                    d.connect();
                     return true;
                 }
+            }
         }
         return false;
     }
 
     private void connectingEvent() {
         if (connectingOnHoldEvent()) return;
-        for (Device device : devices.stream()
-                .filter(d -> d.status == DeviceStatus.DISCONNECTED)
-                .toList()) {
-                if (totalWattUsed + device.wattUsage <= solarInput) {
-                    device.connect();
-                    totalWattUsed += device.wattUsage;
-                } else {
-                    // NOTE: i should handle on hold exceeding MAX_ONHOLD
-                    device.onhold();
-                }
-                break;
-            }
-        }
 
-    private void disconnectingEvent() {
-        for (Device device : devices.stream()
+        List<Device> disconnectedDevices = devices.stream()
                 .filter(d -> d.status == DeviceStatus.DISCONNECTED)
-                .toList()) {
-            if (device.status != DeviceStatus.DISCONNECTED && !device.isAlwaysConnected) {
-                if (device.status == DeviceStatus.CONNECTED) {
-                    totalWattUsed -= device.wattUsage;
-                }
-                device.disconnect();
-                break;
-            }
+                .toList();
+        if (disconnectedDevices.isEmpty()) return;
+
+        Device randomDevice = disconnectedDevices.get(rand.nextInt(disconnectedDevices.size()));
+        if (totalWattUsed + randomDevice.wattUsage <= solarInput) {
+            randomDevice.connect();
+            totalWattUsed += randomDevice.wattUsage;
+        } else {
+            // NOTE: i should handle on hold exceeding MAX_ONHOLD
+            randomDevice.onhold();
+            onHoldDevices.add(randomDevice);
         }
     }
+
+    private void disconnectingEvent() {
+        List<Device> connectedDevices = devices.stream()
+                .filter(d -> d.status == DeviceStatus.CONNECTED)
+                .toList();
+
+        List<Device> notConnectedDevices = new ArrayList<Device>(connectedDevices);
+        notConnectedDevices.addAll(onHoldDevices);
+
+        if (notConnectedDevices.isEmpty()) return;
+        Device randomDevice = notConnectedDevices.get(rand.nextInt(notConnectedDevices.size()));
+
+        if (randomDevice.status == DeviceStatus.CONNECTED && !randomDevice.isAlwaysConnected){
+            totalWattUsed -= randomDevice.wattUsage;
+        }
+        randomDevice.disconnect();
+}
 
     private void update() {
         if (totalWattUsed > solarInput) {
