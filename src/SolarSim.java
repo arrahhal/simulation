@@ -1,5 +1,6 @@
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
@@ -95,13 +96,17 @@ public class SolarSim {
 
     private boolean connectingOnHoldEvent() {
         boolean deviceConnected = false;
-        for (Device d : onHoldDevices) {
+        Iterator<Device> iterator = onHoldDevices.iterator();
+        while (iterator.hasNext()) {
+            Device d = iterator.next();
             if (d.status == DeviceStatus.ONHOLD) {
                 if (d.wattUsage + currentWatt() <= solarInput) {
-                    onHoldDevices.remove(d);
                     d.connect();
+                    iterator.remove();
                     deviceConnected = true;
                 }
+            } else {
+                iterator.remove();
             }
         }
         return deviceConnected;
