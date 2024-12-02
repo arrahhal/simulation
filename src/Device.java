@@ -6,10 +6,11 @@ public class Device {
     int wattUsage;
     String id;
 
-    Device() {
+    Device(int wattUsage) {
         this.isAlwaysConnected = false;
         this.status = DeviceStatus.DISCONNECTED;
         this.id = UUID.randomUUID().toString();
+        this.wattUsage = wattUsage;
     }
 
     public void connect() {

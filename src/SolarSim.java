@@ -2,6 +2,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 public class SolarSim {
     final int MAX_ON_HOLD = 10;
@@ -25,41 +26,44 @@ public class SolarSim {
         BufferedReader inFile = new BufferedReader(new FileReader("data/solar.in"));
 
         String[] params = inFile.readLine().trim().split("\\s+");
-        for (int idx = 0; idx++ < params.length; idx++) {
-            int param = Integer.parseInt(params[idx]);
-            if (idx == 0) {
-                solarInput = param;
-            }
-            else if (idx == 1) {
-                numOfDevices = param;
-            } else if (idx <= 1 + numOfDevices) {
-                Device device = new Device();
-                devices.add(device);
-            } else {
-                int index = idx - numOfDevices + 2;
-                if (param == 1) {
-                    devices.get(index).connect();
+
+        solarInput = Integer.parseInt(params[0]);
+        numOfDevices = Integer.parseInt(params[1]);
+        for (int idx = 2; idx < numOfDevices + 2; idx++) {
+            int wattUsage = Integer.parseInt(params[idx]);
+            Device device = new Device(wattUsage);
+            devices.add(device);
+        }
+
+        for (int idx = numOfDevices + 2; idx < params.length; idx++) {
+            if (params[idx].equals( "1")) {
+                Device d = devices.get(idx - (numOfDevices + 2));
+                if (d.wattUsage + currentWatt() <= solarInput) {
+                    d.connect();
                 }
             }
-
         }
         inFile.close();
     }
 
     public int currentWatt() {
-        int total = 0;
+        int used = 0;
         for (Device device : devices) {
-            total += device.wattUsage;
+            if (device.status == DeviceStatus.CONNECTED) {
+                used += device.wattUsage;
+            }
         }
-        return total;
+        return used;
     }
 
     public void report() throws IOException {
         BufferedWriter outFile = new BufferedWriter(new FileWriter("data/solar.out"));
-        // Solar Input: 1000 watts
-        //Number of Devices: 7
-        //Device Power Consumption: 200 200 100 400 200 300 500
-        //Always Connected: 1 1 0 0 0 0 1
+        outFile.write("Solar Input: " + solarInput + " watts\n" +
+                "Number of Devices: " + numOfDevices + "\n" +
+                "Device Power Consumption: " +
+                devices.stream().map(d -> String.valueOf(d.wattUsage)).collect(Collectors.joining(" ")) + "\n" +
+                "Always Connected: " +
+                devices.stream().map(d -> String.valueOf(d.isAlwaysConnected)).collect(Collectors.joining(" ")) + "\n\n");
 
         outFile.write("Simulation Report\n" +
                 "Overload (Watts): " + wattNeeded + "\n" +
@@ -69,6 +73,7 @@ public class SolarSim {
     }
 
     public void run() throws IOException {
+        input();
         while (simTime < 24 * 60) {
             handleEvent();
             update();
@@ -84,20 +89,22 @@ public class SolarSim {
             connectingEvent();
         } else {
             disconnectingEvent();
+            connectingOnHoldEvent();
         }
     }
 
     private boolean connectingOnHoldEvent() {
+        boolean deviceConnected = false;
         for (Device d : onHoldDevices) {
             if (d.status == DeviceStatus.ONHOLD) {
-                if (d.wattUsage + totalWattUsed <= solarInput) {
+                if (d.wattUsage + currentWatt() <= solarInput) {
                     onHoldDevices.remove(d);
                     d.connect();
-                    return true;
+                    deviceConnected = true;
                 }
             }
         }
-        return false;
+        return deviceConnected;
     }
 
     private void connectingEvent() {
@@ -137,9 +144,11 @@ public class SolarSim {
 }
 
     private void update() {
-        if (totalWattUsed > solarInput) {
-            wattNeeded += totalWattUsed - solarInput;
-        } else {
+        if (!onHoldDevices.isEmpty()) {
+            int overload = onHoldDevices.stream().mapToInt(d -> d.wattUsage).sum();
+            wattNeeded += overload;
+        }
+        else {
             wattWasted += solarInput - totalWattUsed;
         }
     }
