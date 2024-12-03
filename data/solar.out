@@ -1,8 +1,8 @@
-Solar Input: 1000 watts
-Number of Devices: 10
-Device Power Consumption: 200 200 100 400 200 300 500 200 200 200
-Always Connected: false false false false false false false false false false
+Solar Input: 1500 watts
+Number of Devices: 6
+Device Power Consumption: 400 400 600 50 200 200
+Always Connected: true true false false false false
 
 Simulation Report
-Overload (Watts): 0
-Wasted Solar Input (Watts): 82300
+Average Overload (Watts): 266
+Average Wasted Solar Input (Watts): 95

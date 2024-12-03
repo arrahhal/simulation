@@ -6,7 +6,7 @@ import java.util.Random;
 import java.util.stream.Collectors;
 
 public class SolarSim {
-    final double EVENT_INTERVAL = 30;
+    final double EVENT_INTERVAL = 60;
     final Random rand = new Random();
 
     int solarInput;
@@ -69,7 +69,7 @@ public class SolarSim {
                 devices.stream().map(d -> String.valueOf(d.isAlwaysConnected)).collect(Collectors.joining(" ")) + "\n\n");
 
         outFile.write("Simulation Report\n" +
-                "Average Overload (Watts): " + wattNeeded / 24+ "\n" +
+                "Average Overload (Watts): " + wattNeeded / 24 + "\n" +
                 "Average Wasted Solar Input (Watts): " + wattWasted / 24 + "\n");
 
         outFile.close();
@@ -143,6 +143,7 @@ public class SolarSim {
     private void update() {
         if (!onHoldDevices.isEmpty()) {
             int overload = onHoldDevices.stream().mapToInt(d -> d.wattUsage).sum();
+            overload -= solarInput - currentWatt();
             wattNeeded += overload;
         }
         else {
