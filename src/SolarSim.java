@@ -10,10 +10,10 @@ public class SolarSim {
     final Random rand = new Random();
 
     int solarInput;
-    List<Device> devices = new ArrayList<Device>();
+    List<Device> devices = new ArrayList<>();
 
     // store on hold devices indexes from oldest to newest
-    List<Device> onHoldDevices = new ArrayList<Device>();
+    List<Device> onHoldDevices = new ArrayList<>();
 
     int wattWasted = 0;
     int wattNeeded = 0;
@@ -131,7 +131,7 @@ public class SolarSim {
                 .filter(d -> d.status == DeviceStatus.CONNECTED)
                 .toList();
 
-        List<Device> notConnectedDevices = new ArrayList<Device>(connectedDevices);
+        List<Device> notConnectedDevices = new ArrayList<>(connectedDevices);
         notConnectedDevices.addAll(onHoldDevices);
 
         if (notConnectedDevices.isEmpty()) return;
