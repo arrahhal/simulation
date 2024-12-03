@@ -6,7 +6,6 @@ import java.util.Random;
 import java.util.stream.Collectors;
 
 public class SolarSim {
-    final int MAX_ON_HOLD = 10;
     final double EVENT_INTERVAL = 30;
     final Random rand = new Random();
 
@@ -16,7 +15,6 @@ public class SolarSim {
     // store on hold devices indexes from oldest to newest
     List<Device> onHoldDevices = new ArrayList<Device>();
 
-    int totalWattUsed = 0;
     int wattWasted = 0;
     int wattNeeded = 0;
     double simTime = 0.0;
@@ -44,6 +42,7 @@ public class SolarSim {
                     d.connect();
                 } else {
                     d.onhold();
+                    onHoldDevices.add(d);
                 }
             }
         }
@@ -97,8 +96,7 @@ public class SolarSim {
         }
     }
 
-    private boolean connectingOnHoldEvent() {
-        boolean deviceConnected = false;
+    private void connectingOnHoldEvent() {
         Iterator<Device> iterator = onHoldDevices.iterator();
         while (iterator.hasNext()) {
             Device d = iterator.next();
@@ -106,29 +104,23 @@ public class SolarSim {
                 if (d.wattUsage + currentWatt() <= solarInput) {
                     d.connect();
                     iterator.remove();
-                    deviceConnected = true;
                 }
             } else {
                 iterator.remove();
             }
         }
-        return deviceConnected;
     }
 
     private void connectingEvent() {
-        if (connectingOnHoldEvent()) return;
-
         List<Device> disconnectedDevices = devices.stream()
                 .filter(d -> d.status == DeviceStatus.DISCONNECTED)
                 .toList();
         if (disconnectedDevices.isEmpty()) return;
 
         Device randomDevice = disconnectedDevices.get(rand.nextInt(disconnectedDevices.size()));
-        if (totalWattUsed + randomDevice.wattUsage <= solarInput) {
+        if (currentWatt() + randomDevice.wattUsage <= solarInput) {
             randomDevice.connect();
-            totalWattUsed += randomDevice.wattUsage;
         } else {
-            // NOTE: i should handle on hold exceeding MAX_ONHOLD
             randomDevice.onhold();
             onHoldDevices.add(randomDevice);
         }
@@ -145,9 +137,6 @@ public class SolarSim {
         if (notConnectedDevices.isEmpty()) return;
         Device randomDevice = notConnectedDevices.get(rand.nextInt(notConnectedDevices.size()));
 
-        if (randomDevice.status == DeviceStatus.CONNECTED && !randomDevice.isAlwaysConnected){
-            totalWattUsed -= randomDevice.wattUsage;
-        }
         randomDevice.disconnect();
 }
 
@@ -157,7 +146,7 @@ public class SolarSim {
             wattNeeded += overload;
         }
         else {
-            wattWasted += solarInput - totalWattUsed;
+            wattWasted += solarInput - currentWatt();
         }
     }
 
