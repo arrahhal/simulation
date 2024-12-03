@@ -69,8 +69,8 @@ public class SolarSim {
                 devices.stream().map(d -> String.valueOf(d.isAlwaysConnected)).collect(Collectors.joining(" ")) + "\n\n");
 
         outFile.write("Simulation Report\n" +
-                "Overload (Watts): " + wattNeeded + "\n" +
-                "Wasted Solar Input (Watts): " + wattWasted + "\n");
+                "Average Overload (Watts): " + wattNeeded / 24+ "\n" +
+                "Average Wasted Solar Input (Watts): " + wattWasted / 24 + "\n");
 
         outFile.close();
     }
